@@ -13,9 +13,8 @@ import java.util.HashMap;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
 
-public class SubventionsController implements Initializable
-{
-    HashMap<String,HashMap<String, TreeMap<Integer,ArrayList<Structure>>>> lesSubventions;
+public class SubventionsController implements Initializable {
+    HashMap<String, HashMap<String, TreeMap<Integer, ArrayList<Structure>>>> lesSubventions;
     @FXML
     private AnchorPane apAffecter;
     @FXML
@@ -44,13 +43,12 @@ public class SubventionsController implements Initializable
     private TreeView tvMontantsParAnnees;
 
     @Override
-    public void initialize(URL url, ResourceBundle resourceBundle)
-    {
+    public void initialize(URL url, ResourceBundle resourceBundle) {
         apAffecter.toFront();
         lesSubventions = new HashMap<>();
-        lvVilles.getItems().addAll("Bordeaux","Nantes","Paris");
-        lvSecteurs.getItems().addAll("Culture","Education","Santé","Sport");
-        cboAnnees.getItems().addAll(2020,2021,2022,2023,2024,2025);
+        lvVilles.getItems().addAll("Bordeaux", "Nantes", "Paris");
+        lvSecteurs.getItems().addAll("Culture", "Education", "Santé", "Sport");
+        cboAnnees.getItems().addAll(2020, 2021, 2022, 2023, 2024, 2025);
         cboAnnees.getSelectionModel().selectFirst();
 
         // Jeu d'essais au cas où :)
@@ -113,27 +111,123 @@ public class SubventionsController implements Initializable
     }
 
     @FXML
-    public void btnMenuClicked(Event event)
-    {
-        if(event.getSource()==btnMenuAffecter)
-        {
+    public void btnMenuClicked(Event event) {
+        if (event.getSource() == btnMenuAffecter) {
             apAffecter.toFront();
-        }
-        else if(event.getSource()==btnMenuStatistiques)
-        {
+        } else if (event.getSource() == btnMenuStatistiques) {
             apStatistiques.toFront();
         }
     }
 
     @FXML
-    public void btnAffecterSubventionClicked(Event event)
-    {
+    public void btnAffecterSubventionClicked(Event event) {
+        if (lvVilles.getSelectionModel().getSelectedItem() == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setContentText("sélectionner une ville");
+            alert.setHeaderText("");
+            alert.setTitle("Choix de la ville");
+            alert.showAndWait();
+        } else if (lvSecteurs.getSelectionModel().getSelectedItem() == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setContentText("sélectionner un sécteur");
+            alert.setHeaderText("");
+            alert.setTitle("Choix du sécteur");
+            alert.showAndWait();
+
+        } else if (txtMontant.getText().equals("")) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setContentText("saisir un montant");
+            alert.setTitle("Choix du montant");
+            alert.setHeaderText("");
+            alert.showAndWait();
+
+        } else if (txtNomStructure.getText().equals("")) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setContentText("saisir un montant");
+            alert.setTitle("Choix de la structure");
+            alert.setHeaderText("");
+            alert.showAndWait();
+
+        } else {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setContentText("Subvention enregistrée");
+            alert.setTitle("Affectation réussie");
+            alert.setHeaderText("");
+            alert.showAndWait();
+            Structure laStructure = new Structure(txtNomStructure.getText(), Integer.parseInt(txtMontant.getText()));
+
+            if (!lesSubventions.containsKey(lvVilles.getSelectionModel().getSelectedItem().toString())) {
+                ArrayList<Structure> lesStructures = new ArrayList<>();
+                lesStructures.add(laStructure);
+                TreeMap<Integer, ArrayList<Structure>> lesAnnee = new TreeMap<>();
+                lesAnnee.put(Integer.parseInt(cboAnnees.getSelectionModel().getSelectedItem().toString()), lesStructures);
+                HashMap<String, TreeMap<Integer, ArrayList<Structure>>> lesSecteur = new HashMap<>();
+                lesSecteur.put(lvSecteurs.getSelectionModel().getSelectedItem().toString(), lesAnnee);
+                lesSubventions.put(lvVilles.getSelectionModel().getSelectedItem().toString(), lesSecteur);
+
+            }
+            if (!lesSubventions.get(lvVilles.getSelectionModel().getSelectedItem().toString()).containsKey(lvSecteurs)) {
+                ArrayList<Structure> lesStructures = new ArrayList<>();
+                lesStructures.add(laStructure);
+                TreeMap<Integer, ArrayList<Structure>> lesAnnee = new TreeMap<>();
+                lesAnnee.put(Integer.parseInt(cboAnnees.getSelectionModel().getSelectedItem().toString()), lesStructures);
+                lesSubventions.get(lvVilles.getSelectionModel().getSelectedItem().toString()).put(lvSecteurs.getSelectionModel().getSelectedItem().toString(), lesAnnee);
+            }
+            if (!lesSubventions.get(lvVilles.getSelectionModel().getSelectedItem().toString()).get(lvSecteurs.getSelectionModel().getSelectedItem().toString()).containsKey(Integer.parseInt(cboAnnees.getSelectionModel().getSelectedItem().toString()))) {
+                ArrayList<Structure> lesStructures = new ArrayList<>();
+                lesStructures.add(laStructure);
+                lesSubventions.get(lvVilles.getSelectionModel().getSelectedItem().toString()).get(lvSecteurs.getSelectionModel().getSelectedItem().toString()).put(Integer.parseInt(cboAnnees.getSelectionModel().getSelectedItem().toString()), lesStructures);
+                int i = 0;
+            }
+            lvVillesStats.getItems().clear();
+
+            for (String uneVilles : lesSubventions.keySet()) {
+                lvVillesStats.getItems().add(uneVilles);
+            }
+
+
+        }
+
 
     }
 
     @FXML
-    public void lvVillesStatsClicked(Event event)
-    {
+    public void lvVillesStatsClicked(Event event) {
+        TreeItem root = new TreeItem<>("par Secteur");
+        TreeItem secteur = new TreeItem<>();
+        HashMap<String, Integer> montantSecteur = new HashMap<>();
+        int montantTotal = 0;
+
+        for (String unSecteur : lesSubventions.get(lvVillesStats.getSelectionModel().getSelectedItem().toString()).keySet()) {
+            if (!montantSecteur.containsKey(unSecteur)) {
+                for (int annee : lesSubventions.get(lvVillesStats.getSelectionModel().getSelectedItem().toString()).get(unSecteur).keySet()) {
+                    for (Structure uneStructure : lesSubventions.get(lvVillesStats.getSelectionModel().getSelectedItem().toString()).get(unSecteur).get(annee)) {
+                        montantTotal = 0;
+                        montantTotal = montantTotal + uneStructure.getMontant();
+                        montantSecteur.put(unSecteur, montantTotal);
+                    }
+                }
+
+            } else {
+                for (int annee : lesSubventions.get(lvVillesStats.getSelectionModel().getSelectedItem().toString()).get(unSecteur).keySet()) {
+                    for (Structure uneStructure : lesSubventions.get(lvVillesStats.getSelectionModel().getSelectedItem().toString()).get(unSecteur).get(annee)) {
+                        montantTotal = montantSecteur.get(unSecteur);
+                        montantTotal = montantTotal + uneStructure.getMontant();
+                        montantSecteur.remove(unSecteur);
+                        montantSecteur.put(unSecteur, montantTotal);
+
+                    }
+                }
+
+
+            }
+            secteur = new TreeItem<>(unSecteur + " : " + montantSecteur.get(unSecteur));
+            root.getChildren().add(secteur);
+
+        }
+
+
+        tvMontantsParSecteurs.setRoot(root);
 
     }
 }
